@@ -3,7 +3,7 @@ import streamlit as st
 # Configuration de la page
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
-# Injection CSS pour nettoyer l'interface sans utiliser le mode embed
+# Injection CSS pour nettoyer l'interface de fond en comble
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600&display=swap');
@@ -42,7 +42,7 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Sécurité : masquer également le footer d'intégration au cas où l'URL embed serait réutilisée */
+    /* Masquer la barre d'intégration blanche (Built with Streamlit / Fullscreen) */
     div[data-testid="stEmbedFooter"] {
         display: none !important;
     }
