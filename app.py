@@ -3,10 +3,10 @@ import streamlit as st
 # Configuration de la page
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
-# Injection CSS pour la police, les tailles et le nettoyage de l'interface
+# Injection CSS pour nettoyer l'interface sans utiliser le mode embed
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600&display=swap');
     
     /* Application de la police Inter et de la taille 12px partout */
     html, body, [data-testid="stAppViewContainer"], .stChatMessage, .stChatInput textarea {
@@ -14,15 +14,35 @@ st.markdown("""
         font-size: 12px !important;
     }
 
-    /* Suppression des espaces et marges inutiles */
-    .block-container { padding-top: 0rem; padding-bottom: 0rem; }
+    /* Ajustement des marges internes pour optimiser l'espace dans l'iframe */
+    .block-container { 
+        padding-top: 1rem !important; 
+        padding-bottom: 1rem !important; 
+    }
     
-    /* Masquer les menus et footers standards de Streamlit */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* Masquer le bandeau supérieur complet (Header avec bouton Deploy) */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
     
-    /* Masquer la barre d'intégration blanche (Built with Streamlit / Fullscreen) */
+    /* Masquer la ligne de décoration colorée tout en haut de l'écran */
+    [data-testid="stDecoration"] {
+        display: none !important;
+    }
+    
+    /* Masquer le menu d'options standard (bouton hamburger / trois points) */
+    #MainMenu {
+        visibility: hidden !important;
+        display: none !important;
+    }
+    
+    /* Masquer le footer classique de Streamlit ('Made with Streamlit') */
+    footer {
+        visibility: hidden !important;
+        display: none !important;
+    }
+    
+    /* Sécurité : masquer également le footer d'intégration au cas où l'URL embed serait réutilisée */
     div[data-testid="stEmbedFooter"] {
         display: none !important;
     }
