@@ -6,7 +6,7 @@ import json
 import re
 from urllib.parse import quote
 
-# ─── Configuration page ───────────────────────────────────────────────────────
+# ─── Configuration page TESTGITHUB ───────────────────────────────────────────────────────
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
 st.markdown("""
