@@ -5,19 +5,23 @@ import os
 import json
 import re
 from urllib.parse import quote
+import streamlit.components.v1 as components
 
-# ─── Configuration page TESTGITHUB ───────────────────────────────────────────────────────
+# ─── Configuration page ───────────────────────────────────────────────────────
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-    html, body, [data-testid="stAppViewContainer"], .stChatMessage, .stChatInput textarea {
+    /* ── Typographie ─────────────────────────────────────────────────── */
+    html, body, * {
         font-family: 'Inter', sans-serif !important;
         font-size: 12px !important;
+        color: #d0d4da;
     }
 
+    /* ── Layout ──────────────────────────────────────────────────────── */
     .block-container {
         padding-top: 0rem !important;
         padding-bottom: 0rem !important;
@@ -25,51 +29,129 @@ st.markdown("""
         padding-right: 1rem !important;
     }
 
-    [data-testid="stAppViewContainer"] {
-        padding-bottom: 0rem !important;
-    }
-
-    [data-testid="stHeader"], [data-testid="stToolbar"], header {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-    }
-
-    [data-testid="stDecoration"] {
-        display: none !important;
-    }
-
-    #MainMenu {
-        visibility: hidden !important;
-        display: none !important;
-    }
-
-    footer {
-        visibility: hidden !important;
-        display: none !important;
-    }
-
-    [data-testid="stEmbedFooter"],
-    .stEmbedFooter,
-    [class*="stEmbedFooter"],
-    [class*="EmbedFooter"] {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-        padding: 0px !important;
-    }
-
-    [data-testid="bundle-hosted-badge"],
-    .viewerBadge,
-    [class*="viewerBadge"],
-    [class*="styled-widgets"],
+    /* ── Masquer le chrome Streamlit ─────────────────────────────────── */
+    [data-testid="stHeader"], [data-testid="stToolbar"],
+    [data-testid="stDecoration"], header, #MainMenu, footer,
+    [data-testid="stEmbedFooter"], .stEmbedFooter,
+    [class*="stEmbedFooter"], [class*="EmbedFooter"],
+    [data-testid="bundle-hosted-badge"], .viewerBadge,
+    [class*="viewerBadge"], [class*="styled-widgets"],
     a[href*="streamlit.io"] {
         display: none !important;
         visibility: hidden !important;
-        height: 0px !important;
-        width: 0px !important;
-        padding: 0px !important;
-        margin: 0px !important;
+        height: 0 !important;
+        width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* ── Backgrounds transparents ────────────────────────────────────── */
+    html, body,
+    [data-testid="stApp"],
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    [data-testid="stBottom"],
+    [data-testid="stVerticalBlock"],
+    [data-testid="stVerticalBlockBorderWrapper"],
+    .main, .block-container,
+    [data-testid="stChatMessage"],
+    [data-testid="stChatInputContainer"],
+    [data-testid="stChatInput"] textarea {
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    /* ── Couleur texte globale ───────────────────────────────────────── */
+    [data-testid="stChatMessage"] *,
+    [data-testid="stMarkdownContainer"] *,
+    [data-testid="stChatInput"] textarea,
+    [data-testid="stSpinner"] * {
+        color: #d0d4da !important;
+    }
+
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: rgba(208, 212, 218, 0.4) !important;
+    }
+
+    [data-testid="stChatInput"] textarea {
+        caret-color: #d0d4da !important;
+    }
+
+    /* ── Champ saisie : pas de bordure rouge ─────────────────────────── */
+    :root {
+        --primary-color: rgba(208, 212, 218, 0.35) !important;
+    }
+
+    [data-testid="stChatInputContainer"] > div {
+        border-color: rgba(208, 212, 218, 0.18) !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    [data-testid="stChatInputContainer"] > div:focus-within {
+        border-color: rgba(208, 212, 218, 0.4) !important;
+        box-shadow: none !important;
+    }
+
+    *:focus, *:focus-visible {
+        outline: none !important;
+    }
+
+    /* ── Messages user à droite, avatar masqué ───────────────────────── */
+    [data-chat-role="user"] {
+        flex-direction: row-reverse !important;
+    }
+
+    /* Masque le premier enfant du message user (conteneur avatar) */
+    [data-chat-role="user"] > div:first-child {
+        display: none !important;
+    }
+
+    /* Aligne le texte à droite */
+    [data-chat-role="user"] [data-testid="stMarkdownContainer"],
+    [data-chat-role="user"] p {
+        text-align: right !important;
+    }
+
+    /* ── Coins LED (pseudo-éléments CSS pur) ─────────────────────────── */
+    html::before, html::after, body::before, body::after {
+        content: '';
+        position: fixed;
+        width: 18px;
+        height: 18px;
+        z-index: 99999;
+        pointer-events: none;
+        transition: border-color 0.4s ease, filter 0.4s ease;
+    }
+
+    html::before {
+        top: 12px; left: 12px;
+        border-top: 1.5px solid rgba(208, 212, 218, 0.2);
+        border-left: 1.5px solid rgba(208, 212, 218, 0.2);
+    }
+    html::after {
+        top: 12px; right: 12px;
+        border-top: 1.5px solid rgba(208, 212, 218, 0.2);
+        border-right: 1.5px solid rgba(208, 212, 218, 0.2);
+    }
+    body::before {
+        bottom: 12px; left: 12px;
+        border-bottom: 1.5px solid rgba(208, 212, 218, 0.2);
+        border-left: 1.5px solid rgba(208, 212, 218, 0.2);
+    }
+    body::after {
+        bottom: 12px; right: 12px;
+        border-bottom: 1.5px solid rgba(208, 212, 218, 0.2);
+        border-right: 1.5px solid rgba(208, 212, 218, 0.2);
+    }
+
+    /* État illuminé : hover sur la fenêtre OU focus sur le champ */
+    html:hover::before, html:hover::after,
+    html:hover body::before, html:hover body::after,
+    html:focus-within::before, html:focus-within::after,
+    body:focus-within::before, body:focus-within::after {
+        border-color: #d0d4da;
+        filter: drop-shadow(0 0 6px rgba(208, 212, 218, 0.75));
     }
 </style>
 """, unsafe_allow_html=True)
@@ -113,13 +195,11 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "P&G Assistant, propulsé par Gemini. Comment puis-je vous aider ?"}
     ]
 
-# active_sheet mémorise la feuille en cours dans la conversation (None = pas encore déterminé)
 if "active_sheet" not in st.session_state:
     st.session_state.active_sheet = None
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 def build_history_str(exclude_last=True, max_messages=8):
-    """Formate les derniers échanges pour les inclure dans les prompts Gemini."""
     msgs = st.session_state.messages
     if exclude_last:
         msgs = msgs[:-1]
@@ -127,36 +207,27 @@ def build_history_str(exclude_last=True, max_messages=8):
     lines = []
     for m in recent:
         role = "Utilisateur" if m["role"] == "user" else "Assistant"
-        content = m["content"][:600]  # tronquer les messages trop longs
-        lines.append(f"[{role}] {content}")
+        lines.append(f"[{role}] {m['content'][:600]}")
     return "\n".join(lines)
 
 
 def build_sheet_schema(name, df):
-    """Génère la description complète d'un dataframe pour le prompt."""
     cols = " | ".join(f"{c} ({df[c].dtype})" for c in df.columns)
-
-    # Toutes les valeurs uniques des dimensions pour éviter les hallucinations
     dims = ["Pays", "Marque", "Véhicule", "Source_Traffic"]
     dim_lines = "\n".join(
         f"  {c} : {', '.join(str(v) for v in sorted(df[c].dropna().unique()))}"
         for c in dims if c in df.columns
     )
-
-    # Plage temporelle réelle
     date_col = next((c for c in ["Date", "Timestamp"] if c in df.columns), None)
     date_info = (
         f"  {date_col} : {df[date_col].min()} → {df[date_col].max()}"
         if date_col else "  (aucune colonne temporelle)"
     )
-
-    # Statistiques des métriques
     numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
     metric_lines = "\n".join(
         f"  {c} : total={df[c].sum():,.0f}, moy={df[c].mean():.1f}, min={df[c].min():.0f}, max={df[c].max():.0f}"
         for c in numeric_cols
     )
-
     return (
         f"Feuille '{name}' ({len(df):,} lignes)\n"
         f"Colonnes : {cols}\n"
@@ -169,7 +240,6 @@ def build_sheet_schema(name, df):
 def make_routing_prompt(question):
     hist_schema = build_sheet_schema("Historique", df_hist)
     rt_schema = build_sheet_schema("Real Time", df_rt)
-
     history_str = build_history_str()
     history_section = f"Historique de la conversation :\n{history_str}\n\n" if history_str else ""
 
@@ -195,7 +265,7 @@ Nouvelle question : "{question}"
 Retourne UNIQUEMENT un objet JSON valide, sans markdown, sans texte autour.
 
 Règle de clarification — applique-la dans cet ordre strict :
-1. Si un contexte actif est établi (indiqué entre crochets ci-dessus) : utilise cette feuille sans redemander, SAUF si l'utilisateur mentionne explicitement l'autre (ex: "maintenant en historique", "passe sur le real time").
+1. Si un contexte actif est établi (indiqué entre crochets ci-dessus) : utilise cette feuille sans redemander, SAUF si l'utilisateur mentionne explicitement l'autre.
 2. Si AUCUN contexte actif n'est établi : tu DOIS retourner {{"action":"clarify"}} à moins que la question contienne un terme sans ambiguïté comme "historique", "journalier", "real time", "temps réel", "real-time". En l'absence de ces termes, retourne TOUJOURS la clarification — ne suppose jamais, ne devine jamais.
 
 Format si clarification nécessaire :
@@ -220,17 +290,12 @@ Règles strictes pour le code pandas :
 def route_and_query(question):
     response = gemini.generate_content(make_routing_prompt(question))
     text = response.text.strip()
-
-    # Extraire le JSON même s'il est enrobé dans du markdown
     m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
     if m:
         text = m.group(1).strip()
-
-    # Fallback : trouver le premier objet JSON dans le texte
     m2 = re.search(r"\{[\s\S]*\}", text)
     if m2:
         text = m2.group(0)
-
     return json.loads(text)
 
 # ─── Exécution du code pandas ─────────────────────────────────────────────────
@@ -257,7 +322,6 @@ def generate_answer(question, result_str, sheet):
     label = "historiques (données journalières)" if sheet == "hist" else "real-time (données horodatées)"
     history_str = build_history_str()
     history_section = f"Historique de la conversation :\n{history_str}\n\n" if history_str else ""
-
     prompt = f"""Tu es un assistant data analytics P&G dans une conversation continue. Ne te présente pas si tu l'as déjà fait.
 
 {history_section}Question (données {label}) : "{question}"
@@ -266,29 +330,21 @@ Résultat de l'analyse :
 {result_str}
 
 Réponds en français, de manière concise et professionnelle. Mets les chiffres clés en valeur. N'évoque pas le code ou la méthode technique."""
-
     return gemini.generate_content(prompt).text.strip()
 
 # ─── Orchestration ────────────────────────────────────────────────────────────
 def process(question):
     try:
         routing = route_and_query(question)
-
         if routing["action"] == "clarify":
             return routing["message"]
-
         result = run_pandas_code(routing["code"], routing["sheet"])
-
-        # Mémoriser la feuille active pour les prochains tours
         st.session_state.active_sheet = routing["sheet"]
-
         if result is None:
             return "Aucune donnée ne correspond à votre requête."
         if hasattr(result, "__len__") and len(result) == 0:
             return "Aucune donnée ne correspond aux critères de votre requête."
-
         return generate_answer(question, format_result(result), routing["sheet"])
-
     except json.JSONDecodeError:
         return "Je n'ai pas pu interpréter votre question. Pouvez-vous la reformuler ?"
     except (SyntaxError, KeyError, AttributeError) as e:
@@ -307,7 +363,41 @@ if user_input := st.chat_input("Posez votre question..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
 
     with st.chat_message("assistant"):
-        with st.spinner("Analyse en cours..."):
+        # ── Slot animation "IA réfléchit" ──────────────────────────────
+        # Remplace le st.spinner ci-dessous par ton animation JS :
+        # with st.empty():
+        #     components.html(TON_ANIMATION_HTML, height=80)
+        #     reply = process(user_input)
+        with st.spinner(""):
             reply = process(user_input)
         st.write(reply)
     st.session_state.messages.append({"role": "assistant", "content": reply})
+
+# ─── JS : tagage des rôles user/assistant pour le CSS ────────────────────────
+# Observe les mutations du DOM parent et ajoute data-chat-role sur chaque message.
+components.html("""
+<script>
+(function () {
+    const doc = window.parent.document;
+
+    // Déconnecte l'observateur précédent si la page a re-rendu
+    if (window.parent._chatRoleObserver) {
+        window.parent._chatRoleObserver.disconnect();
+    }
+
+    function tagMessages() {
+        const msgs = doc.querySelectorAll('[data-testid="stChatMessage"]');
+        msgs.forEach((msg, i) => {
+            // index pair = assistant (greeting + réponses), impair = user
+            msg.setAttribute('data-chat-role', i % 2 === 0 ? 'assistant' : 'user');
+        });
+    }
+
+    tagMessages();
+
+    const observer = new MutationObserver(tagMessages);
+    observer.observe(doc.body, { childList: true, subtree: true });
+    window.parent._chatRoleObserver = observer;
+})();
+</script>
+""", height=0, scrolling=False)
