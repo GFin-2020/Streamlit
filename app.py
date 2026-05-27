@@ -3,7 +3,7 @@ import streamlit as st
 # Configuration de la page
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
-# Injection CSS renforcée pour supprimer définitivement tous les éléments parasites
+# Injection CSS renforcée pour supprimer tous les éléments parasites du mode embed
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600&display=swap');
@@ -22,7 +22,7 @@ st.markdown("""
         padding-right: 1rem !important;
     }
     
-    /* Suppression des marges basses pour éviter les barres de défilement fantômes */
+    /* Suppression des marges basses */
     [data-testid="stAppViewContainer"] {
         padding-bottom: 0rem !important;
     }
@@ -38,20 +38,25 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Masquer le menu d'options standard (bouton hamburger / trois points) */
+    /* Masquer le menu d'options standard (bouton hamburger) */
     #MainMenu {
         visibility: hidden !important;
         display: none !important;
     }
     
-    /* Masquer le footer classique de Streamlit ('Made with Streamlit') */
+    /* Masquer le footer classique de Streamlit */
     footer {
         visibility: hidden !important;
         display: none !important;
     }
     
-    /* NETTOYAGE RADICAL DE LA BARRE BLANCHE D'INTÉGRATION (?embed=true) */
-    [data-testid="stEmbedFooter"], .stEmbedFooter, [class*="stEmbedFooter"] {
+    /* CIBLAGE ÉTENDU : Suppression radicale de la barre d'intégration blanche (Built with Streamlit / Fullscreen) */
+    [data-testid="stEmbedFooter"], 
+    .stEmbedFooter, 
+    [class*="stEmbedFooter"], 
+    [class*="EmbedFooter"], 
+    [class*="viewerBadge"], 
+    .viewerBadge {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
