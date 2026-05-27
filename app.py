@@ -1,29 +1,71 @@
 import streamlit as st
 
+# Configuration de la page
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
-st.title("🤖 Assistant P&G Next Gen")
 
-# Initialisation de l'historique des messages si vide
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "Bonjour ! Comment puis-je vous aider sur vos données Real Time aujourd'hui ?"}
-    ]
-
-# Affichage de tous les messages de la session
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
-
-# Zone de saisie de l'utilisateur
-if user_input := st.chat_input("Posez votre question..."):
-    # Affichage du message de l'utilisateur
-    with st.chat_message("user"):
-        st.write(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
-
-    # Simulation d'une réponse de l'assistant (à connecter plus tard à votre API/LLM)
-    reply = f"Voici une simulation de réponse à votre question : '{user_input}'."
+# Injection CSS pour la police, les tailles et le nettoyage de l'interface
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
     
-    with st.chat_message("assistant"):
-        st.write(reply)
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+    /* Application de la police Inter et de la taille 10px partout */
+    html, body, [data-testid="stAppViewContainer"], .stChatMessage, .stChatInput textarea {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 10px !important;
+    }
+
+    /* Suppression des espaces et marges inutiles */
+    .block-container { padding-top: 0rem; padding-bottom: 0rem; }
+    
+    /* Masquer les menus et footers standards de Streamlit */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Masquer la barre d'intégration blanche (Built with Streamlit / Fullscreen) */
+    div[data-testid="stEmbedFooter"] {
+        display: none !important;
+    }
+    
+    /* Alignement du bouton d'action à droite */
+    .stButton > button { float: right; margin-bottom: 10px; }
+</style>
+""", unsafe_allow_html=True)
+
+# Gestion de l'état d'ouverture du chat
+if "menu_ouvert" not in st.session_state:
+    st.session_state.menu_ouvert = False
+
+def basculer_chat():
+    st.session_state.menu_ouvert = not st.session_state.menu_ouvert
+
+# Rendu de l'interface selon l'état
+if not st.session_state.menu_ouvert:
+    # ÉTAT FERMÉ : Uniquement le bouton pour ouvrir
+    st.button("💬 Chat", on_click=basculer_chat)
+else:
+    # ÉTAT OUVERT : Bouton de fermeture et accès direct à la conversation
+    st.button("❌ Fermer", on_click=basculer_chat)
+    
+    # Initialisation de l'historique si vide
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {"role": "assistant", "content": "Bonjour ! Comment puis-je vous aider sur vos données Real Time aujourd'hui ?"}
+        ]
+
+    # Affichage de la conversation
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+
+    # Zone de saisie
+    if user_input := st.chat_input("Posez votre question..."):
+        with st.chat_message("user"):
+            st.write(user_input)
+        st.session_state.messages.append({"role": "user", "content": user_input})
+
+        # Simulation de la réponse statique
+        reply = f"Données reçues pour la question : '{user_input}'."
+        with st.chat_message("assistant"):
+            st.write(reply)
+        st.session_state.messages.append({"role": "assistant", "content": reply})
