@@ -3,7 +3,7 @@ import streamlit as st
 # Configuration de la page
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
-# Injection CSS pour nettoyer l'interface de fond en comble
+# Injection CSS renforcée pour supprimer définitivement tous les éléments parasites
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600&display=swap');
@@ -14,15 +14,23 @@ st.markdown("""
         font-size: 12px !important;
     }
 
-    /* Ajustement des marges internes pour optimiser l'espace dans l'iframe */
+    /* Maximisation de l'espace interne et suppression des décalages */
     .block-container { 
-        padding-top: 1rem !important; 
-        padding-bottom: 1rem !important; 
+        padding-top: 0rem !important; 
+        padding-bottom: 0rem !important; 
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
     
+    /* Suppression des marges basses pour éviter les barres de défilement fantômes */
+    [data-testid="stAppViewContainer"] {
+        padding-bottom: 0rem !important;
+    }
+
     /* Masquer le bandeau supérieur complet (Header avec bouton Deploy) */
     [data-testid="stHeader"] {
         display: none !important;
+        height: 0px !important;
     }
     
     /* Masquer la ligne de décoration colorée tout en haut de l'écran */
@@ -42,9 +50,13 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Masquer la barre d'intégration blanche (Built with Streamlit / Fullscreen) */
-    div[data-testid="stEmbedFooter"] {
+    /* NETTOYAGE RADICAL DE LA BARRE BLANCHE D'INTÉGRATION (?embed=true) */
+    [data-testid="stEmbedFooter"], .stEmbedFooter, [class*="stEmbedFooter"] {
         display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        padding: 0px !important;
+        margin: 0px !important;
     }
 </style>
 """, unsafe_allow_html=True)
