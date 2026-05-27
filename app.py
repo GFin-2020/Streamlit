@@ -3,7 +3,7 @@ import streamlit as st
 # Configuration de la page
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
-# Injection CSS pour nettoyer l'interface suite au passage en ?embedded=true
+# Injection CSS ultime pour éradiquer TOUS les footers (blanc, rouge/noir, cloud, embed)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600&display=swap');
@@ -22,12 +22,12 @@ st.markdown("""
         padding-right: 1rem !important;
     }
     
-    /* Suppression des marges basses */
+    /* Suppression des marges basses pour éviter les molettes de défilement */
     [data-testid="stAppViewContainer"] {
         padding-bottom: 0rem !important;
     }
 
-    /* Masquer le bandeau supérieur, la toolbar et le bouton de déploiement activés par ?embedded=true */
+    /* Masquer le bandeau supérieur complet (Header avec bouton Deploy) et la Toolbar */
     [data-testid="stHeader"], [data-testid="stToolbar"], header {
         display: none !important;
         visibility: hidden !important;
@@ -51,11 +51,29 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Sécurité : masquer la barre d'intégration si elle tente de s'afficher */
-    [data-testid="stEmbedFooter"], .stEmbedFooter, [class*="stEmbedFooter"] {
+    /* 1. NUKER LE FOOTER BLANC (?embed=true) */
+    [data-testid="stEmbedFooter"], 
+    .stEmbedFooter, 
+    [class*="stEmbedFooter"],
+    [class*="EmbedFooter"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
+        padding: 0px !important;
+    }
+
+    /* 2. NUKER LE BADGE ROUGE/NOIR DE CLOUD HOSTING (?embedded=true) */
+    [data-testid="bundle-hosted-badge"],
+    .viewerBadge,
+    [class*="viewerBadge"],
+    [class*="styled-widgets"],
+    a[href*="streamlit.io"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        width: 0px !important;
+        padding: 0px !important;
+        margin: 0px !important;
     }
 </style>
 """, unsafe_allow_html=True)
