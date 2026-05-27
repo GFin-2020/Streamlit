@@ -3,7 +3,7 @@ import streamlit as st
 # Configuration de la page
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
-# Injection CSS majeure pour éradiquer la barre blanche et lier le fond au dashboard
+# Injection CSS pour nettoyer l'interface suite au passage en ?embedded=true
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600&display=swap');
@@ -14,12 +14,6 @@ st.markdown("""
         font-size: 12px !important;
     }
 
-    /* FORCE LE FOND EN TRANSPARENT : Élimine le bloc blanc visuel dans Looker Studio */
-    html, body, #root, [data-testid="stAppViewContainer"], .main, [data-testid="stMain"] {
-        background-color: transparent !important;
-        background: transparent !important;
-    }
-
     /* Maximisation de l'espace interne et suppression des décalages */
     .block-container { 
         padding-top: 0rem !important; 
@@ -28,15 +22,15 @@ st.markdown("""
         padding-right: 1rem !important;
     }
     
-    /* Suppression stricte des marges et paddings système en bas */
+    /* Suppression des marges basses */
     [data-testid="stAppViewContainer"] {
         padding-bottom: 0rem !important;
-        bottom: 0px !important;
     }
 
-    /* Masquer le bandeau supérieur complet (Header avec bouton Deploy) */
-    [data-testid="stHeader"] {
+    /* Masquer le bandeau supérieur, la toolbar et le bouton de déploiement activés par ?embedded=true */
+    [data-testid="stHeader"], [data-testid="stToolbar"], header {
         display: none !important;
+        visibility: hidden !important;
         height: 0px !important;
     }
     
@@ -57,21 +51,11 @@ st.markdown("""
         display: none !important;
     }
     
-    /* BLINDAGE : Suppression totale de la barre d'intégration (?embed=true) et de ses composants */
-    [data-testid="stEmbedFooter"], 
-    .stEmbedFooter, 
-    [class*="stEmbedFooter"], 
-    [class*="EmbedFooter"], 
-    [class*="viewerBadge"], 
-    .viewerBadge,
-    a[href*="streamlit.io"],
-    [id*="streamlit"] {
+    /* Sécurité : masquer la barre d'intégration si elle tente de s'afficher */
+    [data-testid="stEmbedFooter"], .stEmbedFooter, [class*="stEmbedFooter"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
-        padding: 0px !important;
-        margin: 0px !important;
-        opacity: 0 !important;
     }
 </style>
 """, unsafe_allow_html=True)
