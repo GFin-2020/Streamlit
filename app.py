@@ -3,7 +3,7 @@ import streamlit as st
 # Configuration de la page
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
 
-# Injection CSS renforcée pour supprimer tous les éléments parasites du mode embed
+# Injection CSS majeure pour éradiquer la barre blanche et lier le fond au dashboard
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600&display=swap');
@@ -14,6 +14,12 @@ st.markdown("""
         font-size: 12px !important;
     }
 
+    /* FORCE LE FOND EN TRANSPARENT : Élimine le bloc blanc visuel dans Looker Studio */
+    html, body, #root, [data-testid="stAppViewContainer"], .main, [data-testid="stMain"] {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+
     /* Maximisation de l'espace interne et suppression des décalages */
     .block-container { 
         padding-top: 0rem !important; 
@@ -22,9 +28,10 @@ st.markdown("""
         padding-right: 1rem !important;
     }
     
-    /* Suppression des marges basses */
+    /* Suppression stricte des marges et paddings système en bas */
     [data-testid="stAppViewContainer"] {
         padding-bottom: 0rem !important;
+        bottom: 0px !important;
     }
 
     /* Masquer le bandeau supérieur complet (Header avec bouton Deploy) */
@@ -50,18 +57,21 @@ st.markdown("""
         display: none !important;
     }
     
-    /* CIBLAGE ÉTENDU : Suppression radicale de la barre d'intégration blanche (Built with Streamlit / Fullscreen) */
+    /* BLINDAGE : Suppression totale de la barre d'intégration (?embed=true) et de ses composants */
     [data-testid="stEmbedFooter"], 
     .stEmbedFooter, 
     [class*="stEmbedFooter"], 
     [class*="EmbedFooter"], 
     [class*="viewerBadge"], 
-    .viewerBadge {
+    .viewerBadge,
+    a[href*="streamlit.io"],
+    [id*="streamlit"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
         padding: 0px !important;
         margin: 0px !important;
+        opacity: 0 !important;
     }
 </style>
 """, unsafe_allow_html=True)
