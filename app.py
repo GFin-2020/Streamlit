@@ -8,10 +8,10 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
     
-    /* Application de la police Inter et de la taille 10px partout */
+    /* Application de la police Inter et de la taille 12px partout */
     html, body, [data-testid="stAppViewContainer"], .stChatMessage, .stChatInput textarea {
         font-family: 'Inter', sans-serif !important;
-        font-size: 10px !important;
+        font-size: 12px !important;
     }
 
     /* Suppression des espaces et marges inutiles */
@@ -26,46 +26,28 @@ st.markdown("""
     div[data-testid="stEmbedFooter"] {
         display: none !important;
     }
-    
-    /* Alignement du bouton d'action à droite */
-    .stButton > button { float: right; margin-bottom: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# Gestion de l'état d'ouverture du chat
-if "menu_ouvert" not in st.session_state:
-    st.session_state.menu_ouvert = False
+# Initialisation de l'historique si vide
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "assistant", "content": "Bonjour ! Comment puis-je vous aider sur vos données Real Time aujourd'hui ?"}
+    ]
 
-def basculer_chat():
-    st.session_state.menu_ouvert = not st.session_state.menu_ouvert
+# Affichage de la conversation en continu
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
 
-# Rendu de l'interface selon l'état
-if not st.session_state.menu_ouvert:
-    # ÉTAT FERMÉ : Uniquement le bouton pour ouvrir
-    st.button("💬 Chat", on_click=basculer_chat)
-else:
-    # ÉTAT OUVERT : Bouton de fermeture et accès direct à la conversation
-    st.button("❌ Fermer", on_click=basculer_chat)
-    
-    # Initialisation de l'historique si vide
-    if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {"role": "assistant", "content": "Bonjour ! Comment puis-je vous aider sur vos données Real Time aujourd'hui ?"}
-        ]
+# Zone de saisie
+if user_input := st.chat_input("Posez votre question..."):
+    with st.chat_message("user"):
+        st.write(user_input)
+    st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # Affichage de la conversation
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
-
-    # Zone de saisie
-    if user_input := st.chat_input("Posez votre question..."):
-        with st.chat_message("user"):
-            st.write(user_input)
-        st.session_state.messages.append({"role": "user", "content": user_input})
-
-        # Simulation de la réponse statique
-        reply = f"Données reçues pour la question : '{user_input}'."
-        with st.chat_message("assistant"):
-            st.write(reply)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+    # Simulation de la réponse statique
+    reply = f"Données reçues pour la question : '{user_input}'."
+    with st.chat_message("assistant"):
+        st.write(reply)
+    st.session_state.messages.append({"role": "assistant", "content": reply})
