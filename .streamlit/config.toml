@@ -6,3 +6,5 @@ enableXsrfProtection = false
 base = "dark"
 primaryColor = "#d0d4da"
 textColor = "#d0d4da"
+backgroundColor = "#000000"
+secondaryBackgroundColor = "#000000"

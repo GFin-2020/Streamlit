@@ -49,8 +49,8 @@ st.markdown("""
     /* ── Variables CSS ───────────────────────────────────────────────── */
     :root {
         --primary-color: rgba(208, 212, 218, 0.35) !important;
-        --background-color: transparent !important;
-        --secondary-background-color: transparent !important;
+        --background-color: #000000 !important;
+        --secondary-background-color: #000000 !important;
     }
 
     /* ── Typographie ─────────────────────────────────────────────────── */
@@ -95,8 +95,8 @@ st.markdown("""
     [data-testid^="stChat"],
     .main, .block-container,
     .appview-container {
-        background: transparent !important;
-        background-color: transparent !important;
+        background: #000000 !important;
+        background-color: #000000 !important;
     }
 
     /* ── Couleur texte globale ───────────────────────────────────────── */
@@ -189,22 +189,22 @@ st.markdown("""
     }
 
     html::before {
-        top: 4px; left: 4px;
+        top: 0; left: 0;
         border-top: 1.5px solid rgba(208, 212, 218, 0.2);
         border-left: 1.5px solid rgba(208, 212, 218, 0.2);
     }
     html::after {
-        top: 4px; right: 4px;
+        top: 0; right: 18px;
         border-top: 1.5px solid rgba(208, 212, 218, 0.2);
         border-right: 1.5px solid rgba(208, 212, 218, 0.2);
     }
     body::before {
-        bottom: 4px; left: 4px;
+        bottom: 0; left: 0;
         border-bottom: 1.5px solid rgba(208, 212, 218, 0.2);
         border-left: 1.5px solid rgba(208, 212, 218, 0.2);
     }
     body::after {
-        bottom: 4px; right: 4px;
+        bottom: 0; right: 18px;
         border-bottom: 1.5px solid rgba(208, 212, 218, 0.2);
         border-right: 1.5px solid rgba(208, 212, 218, 0.2);
     }
@@ -217,6 +217,12 @@ st.markdown("""
         border-color: #d0d4da;
         filter: drop-shadow(0 0 6px rgba(208, 212, 218, 0.75));
     }
+
+    /* ── Scrollbar ───────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #000000; }
+    ::-webkit-scrollbar-thumb { background: rgba(208, 212, 218, 0.25); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(208, 212, 218, 0.45); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -417,9 +423,10 @@ def process(question):
         return f"Erreur inattendue : {e}"
 
 # ─── Animation "IA réfléchit" ────────────────────────────────────────────────
-# Carré LED → tourne 405° (losange) → pause → 405° (carré, symétrie 90°) → pause → répète.
-# L'icône contre-tourne pour rester droite. Reset invisible : carré ≡ 90°.
-THINKING_HTML = """
+# Affichée EN DEHORS de st.chat_message() pour remplacer visuellement l'avatar.
+# Taille 40px = même taille que l'avatar PIL affiché par Streamlit.
+# Carré → 405° (losange) → pause → 405° (carré) → pause → répète.
+THINKING_MESSAGE_HTML = """
 <style>
 @keyframes thk-frame-spin {
     0%  { transform: rotate(0deg);   }
@@ -435,23 +442,24 @@ THINKING_HTML = """
     90% { transform: rotate(-810deg); }
    100% { transform: rotate(-810deg); }
 }
-.thk-wrap  { display:flex;align-items:center;justify-content:center;height:64px; }
-.thk-frame { position:relative;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+.thk-outer { display:flex;align-items:flex-start;padding:4px 0 8px 8px; }
+.thk-frame { position:relative;width:40px;height:40px;flex-shrink:0;
+             display:flex;align-items:center;justify-content:center;
              animation:thk-frame-spin 2.8s ease-in-out infinite; }
-.thk-icon  { position:absolute;font-size:22px;color:#d0d4da;
-             text-shadow:0 0 10px rgba(208,212,218,0.7);line-height:1;
+.thk-icon  { position:absolute;font-size:16px;color:#d0d4da;
+             text-shadow:0 0 8px rgba(208,212,218,0.7);line-height:1;
              animation:thk-icon-spin 2.8s ease-in-out infinite; }
-.thk-lc { position:absolute;width:18px;height:18px; }
-.thk-lc::before { content:'';position:absolute;width:100%;height:2px;
-                  background:#d0d4da;box-shadow:0 0 6px rgba(208,212,218,0.6); }
-.thk-lc::after  { content:'';position:absolute;width:2px;height:100%;
-                  background:#d0d4da;box-shadow:0 0 6px rgba(208,212,218,0.6); }
+.thk-lc { position:absolute;width:13px;height:13px; }
+.thk-lc::before { content:'';position:absolute;width:100%;height:1.5px;
+                  background:#d0d4da;box-shadow:0 0 5px rgba(208,212,218,0.6); }
+.thk-lc::after  { content:'';position:absolute;width:1.5px;height:100%;
+                  background:#d0d4da;box-shadow:0 0 5px rgba(208,212,218,0.6); }
 .thk-tl { top:0;left:0;     } .thk-tl::before,.thk-tl::after { top:0;left:0;     }
 .thk-tr { top:0;right:0;    } .thk-tr::before,.thk-tr::after { top:0;right:0;    }
 .thk-bl { bottom:0;left:0;  } .thk-bl::before,.thk-bl::after { bottom:0;left:0;  }
 .thk-br { bottom:0;right:0; } .thk-br::before,.thk-br::after { bottom:0;right:0; }
 </style>
-<div class="thk-wrap">
+<div class="thk-outer">
   <div class="thk-frame">
     <div class="thk-lc thk-tl"></div><div class="thk-lc thk-tr"></div>
     <div class="thk-lc thk-bl"></div><div class="thk-lc thk-br"></div>
@@ -476,11 +484,13 @@ if user_input := st.chat_input("Posez votre question..."):
         st.write(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
+    # Animation dans le slot avatar (hors st.chat_message pour contrôler la position)
+    thinking_slot = st.empty()
+    thinking_slot.markdown(THINKING_MESSAGE_HTML, unsafe_allow_html=True)
+    reply = process(user_input)
+    thinking_slot.empty()
+
     with st.chat_message("assistant", avatar=AVATAR_IMG):
-        thinking_slot = st.empty()
-        thinking_slot.markdown(THINKING_HTML, unsafe_allow_html=True)
-        reply = process(user_input)
-        thinking_slot.empty()
         st.write(reply)
     st.session_state.messages.append({"role": "assistant", "content": reply})
 
@@ -513,8 +523,8 @@ components.html("""
         BG_SELS.forEach(sel => {
             const el = doc.querySelector(sel);
             if (el) {
-                el.style.setProperty('background', 'transparent', 'important');
-                el.style.setProperty('background-color', 'transparent', 'important');
+                el.style.setProperty('background', '#000000', 'important');
+                el.style.setProperty('background-color', '#000000', 'important');
             }
         });
     }
