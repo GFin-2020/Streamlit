@@ -3,4 +3,8 @@ enableCORS = false
 enableXsrfProtection = false
 
 [theme]
+base = "dark"
 primaryColor = "#d0d4da"
+backgroundColor = "#00000000"
+secondaryBackgroundColor = "#00000000"
+textColor = "#d0d4da"

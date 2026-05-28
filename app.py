@@ -384,6 +384,50 @@ def process(question):
     except Exception as e:
         return f"Erreur inattendue : {e}"
 
+# ─── Animation "IA réfléchit" ────────────────────────────────────────────────
+# Carré LED → tourne 405° (losange) → pause → 405° (carré, symétrie 90°) → pause → répète.
+# L'icône contre-tourne pour rester droite. Reset invisible : carré ≡ 90°.
+THINKING_HTML = """
+<style>
+@keyframes thk-frame-spin {
+    0%  { transform: rotate(0deg);   }
+    40% { transform: rotate(405deg); }
+    50% { transform: rotate(405deg); }
+    90% { transform: rotate(810deg); }
+   100% { transform: rotate(810deg); }
+}
+@keyframes thk-icon-spin {
+    0%  { transform: rotate(0deg);    }
+    40% { transform: rotate(-405deg); }
+    50% { transform: rotate(-405deg); }
+    90% { transform: rotate(-810deg); }
+   100% { transform: rotate(-810deg); }
+}
+.thk-wrap  { display:flex;align-items:center;justify-content:center;height:64px; }
+.thk-frame { position:relative;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+             animation:thk-frame-spin 2.8s ease-in-out infinite; }
+.thk-icon  { position:absolute;font-size:22px;color:#d0d4da;
+             text-shadow:0 0 10px rgba(208,212,218,0.7);line-height:1;
+             animation:thk-icon-spin 2.8s ease-in-out infinite; }
+.thk-lc { position:absolute;width:18px;height:18px; }
+.thk-lc::before { content:'';position:absolute;width:100%;height:2px;
+                  background:#d0d4da;box-shadow:0 0 6px rgba(208,212,218,0.6); }
+.thk-lc::after  { content:'';position:absolute;width:2px;height:100%;
+                  background:#d0d4da;box-shadow:0 0 6px rgba(208,212,218,0.6); }
+.thk-tl { top:0;left:0;     } .thk-tl::before,.thk-tl::after { top:0;left:0;     }
+.thk-tr { top:0;right:0;    } .thk-tr::before,.thk-tr::after { top:0;right:0;    }
+.thk-bl { bottom:0;left:0;  } .thk-bl::before,.thk-bl::after { bottom:0;left:0;  }
+.thk-br { bottom:0;right:0; } .thk-br::before,.thk-br::after { bottom:0;right:0; }
+</style>
+<div class="thk-wrap">
+  <div class="thk-frame">
+    <div class="thk-lc thk-tl"></div><div class="thk-lc thk-tr"></div>
+    <div class="thk-lc thk-bl"></div><div class="thk-lc thk-br"></div>
+    <div class="thk-icon">✦</div>
+  </div>
+</div>
+"""
+
 # ─── Interface chat ───────────────────────────────────────────────────────────
 for message in st.session_state.messages:
     if message["role"] == "user":
@@ -391,7 +435,7 @@ for message in st.session_state.messages:
             st.markdown('<span class="msg-user"></span>', unsafe_allow_html=True)
             st.write(message["content"])
     else:
-        with st.chat_message("assistant", avatar="✨"):
+        with st.chat_message("assistant", avatar="✦"):
             st.write(message["content"])
 
 if user_input := st.chat_input("Posez votre question..."):
@@ -400,14 +444,11 @@ if user_input := st.chat_input("Posez votre question..."):
         st.write(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    with st.chat_message("assistant", avatar="✨"):
-        # ── Slot animation "IA réfléchit" ──────────────────────────────
-        # Remplace le st.spinner ci-dessous par ton animation JS :
-        # with st.empty():
-        #     components.html(TON_ANIMATION_HTML, height=80)
-        #     reply = process(user_input)
-        with st.spinner(""):
-            reply = process(user_input)
+    with st.chat_message("assistant", avatar="✦"):
+        thinking_slot = st.empty()
+        thinking_slot.markdown(THINKING_HTML, unsafe_allow_html=True)
+        reply = process(user_input)
+        thinking_slot.empty()
         st.write(reply)
     st.session_state.messages.append({"role": "assistant", "content": reply})
 
