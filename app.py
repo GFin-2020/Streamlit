@@ -6,33 +6,42 @@ import json
 import re
 import math
 from urllib.parse import quote
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 import streamlit.components.v1 as components
 
 # ─── Avatar : LED frame + étoile 4 branches (design issu du React) ────────────
-def _make_avatar(size: int = 80) -> Image.Image:
+def _make_avatar(size: int = 200) -> Image.Image:
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    c = (208, 212, 218, 255)   # #d0d4da
-    lw, cs = 3, 18              # épaisseur trait, taille coin
+    c = (208, 212, 218, 255)
+    lw = 8                       # ~1.6px à 40px d'affichage
+    cs = round(size * 0.26)      # ~10px de bracket à 40px d'affichage
 
     # Coins LED (4 brackets)
     for x0, x1, y0, y1 in [
-        (0, cs, 0, 0), (0, 0, 0, cs),                        # haut-gauche
-        (size - cs, size, 0, 0), (size, size, 0, cs),         # haut-droite
-        (0, 0, size - cs, size), (0, cs, size, size),         # bas-gauche
-        (size - cs, size, size, size), (size, size, size - cs, size),  # bas-droite
+        (0, cs, 0, 0), (0, 0, 0, cs),
+        (size - cs, size, 0, 0), (size, size, 0, cs),
+        (0, 0, size - cs, size), (0, cs, size, size),
+        (size - cs, size, size, size), (size, size, size - cs, size),
     ]:
         draw.line([(x0, y0), (x1, y1)], fill=c, width=lw)
 
-    # Étoile Gemini 4 branches (bras longs, centre étroit)
+    # Étoile Gemini 4 branches — bras très effilés (ratio 12:1)
     cx = cy = size // 2
-    outer, inner = round(size * 0.30), round(size * 0.04)
+    outer, inner = round(size * 0.36), round(size * 0.03)
     pts = []
     for i in range(8):
         angle = math.pi / 4 * i - math.pi / 2
         r = outer if i % 2 == 0 else inner
         pts.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+
+    # Halo doux sous l'étoile
+    glow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).polygon(pts, fill=(208, 212, 218, 90))
+    glow = glow.filter(ImageFilter.GaussianBlur(radius=size // 22))
+    img.alpha_composite(glow)
+
+    # Étoile nette par-dessus
     draw.polygon(pts, fill=c)
 
     return img
@@ -446,7 +455,7 @@ THINKING_MESSAGE_HTML = """
 .thk-frame { position:relative;width:40px;height:40px;flex-shrink:0;
              display:flex;align-items:center;justify-content:center;
              animation:thk-frame-spin 2.8s ease-in-out infinite; }
-.thk-icon  { position:absolute;font-size:16px;color:#d0d4da;
+.thk-icon  { font-size:16px;color:#d0d4da;
              text-shadow:0 0 8px rgba(208,212,218,0.7);line-height:1;
              animation:thk-icon-spin 2.8s ease-in-out infinite; }
 .thk-lc { position:absolute;width:13px;height:13px; }
