@@ -438,11 +438,13 @@ def md_to_html(text: str) -> str:
         elif re.match(r'^[-*+]\s', s):
             if in_ol: out.append("</ol>"); in_ol = False
             if not in_ul: out.append('<ul style="margin:4px 0;padding-left:16px">'); in_ul = True
-            out.append(f'<li>{inline(re.sub(r"^[-*+]\s+", "", s))}</li>')
+            item = inline(re.sub(r'^[-*+]\s+', '', s))
+            out.append(f'<li>{item}</li>')
         elif re.match(r'^\d+[.)]\s', s):
             if in_ul: out.append("</ul>"); in_ul = False
             if not in_ol: out.append('<ol style="margin:4px 0;padding-left:16px">'); in_ol = True
-            out.append(f'<li>{inline(re.sub(r"^\d+[.)]\s+", "", s))}</li>')
+            item = inline(re.sub(r'^\d+[.)]\s+', '', s))
+            out.append(f'<li>{item}</li>')
         else:
             close_lists()
             out.append('<br>' if not s else f'<div>{inline(s)}</div>')
