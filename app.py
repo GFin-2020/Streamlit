@@ -14,8 +14,8 @@ def _make_avatar(size: int = 200) -> Image.Image:
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     c = (208, 212, 218, 255)
-    lw = 8                       # ~1.6px à 40px d'affichage
-    cs = round(size * 0.26)      # ~10px de bracket à 40px d'affichage
+    lw = 16                      # traits épais — très visibles une fois scalés
+    cs = round(size * 0.30)      # longueur bracket = 30% de la taille
 
     # Coins LED (4 brackets)
     for x0, x1, y0, y1 in [
@@ -26,9 +26,9 @@ def _make_avatar(size: int = 200) -> Image.Image:
     ]:
         draw.line([(x0, y0), (x1, y1)], fill=c, width=lw)
 
-    # Étoile Gemini 4 branches — bras très effilés (ratio 12:1)
+    # Étoile Gemini 4 branches — bras effilés, ratio 12:1
     cx = cy = size // 2
-    outer, inner = round(size * 0.36), round(size * 0.03)
+    outer, inner = round(size * 0.32), round(size * 0.026)
     pts = []
     for i in range(8):
         angle = math.pi / 4 * i - math.pi / 2
@@ -37,8 +37,8 @@ def _make_avatar(size: int = 200) -> Image.Image:
 
     # Halo doux sous l'étoile
     glow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    ImageDraw.Draw(glow).polygon(pts, fill=(208, 212, 218, 90))
-    glow = glow.filter(ImageFilter.GaussianBlur(radius=size // 22))
+    ImageDraw.Draw(glow).polygon(pts, fill=(208, 212, 218, 140))
+    glow = glow.filter(ImageFilter.GaussianBlur(radius=size // 16))
     img.alpha_composite(glow)
 
     # Étoile nette par-dessus
@@ -431,51 +431,8 @@ def process(question):
     except Exception as e:
         return f"Erreur inattendue : {e}"
 
-# ─── Animation "IA réfléchit" ────────────────────────────────────────────────
-# Affichée EN DEHORS de st.chat_message() pour remplacer visuellement l'avatar.
-# Taille 40px = même taille que l'avatar PIL affiché par Streamlit.
-# Carré → 405° (losange) → pause → 405° (carré) → pause → répète.
-THINKING_MESSAGE_HTML = """
-<style>
-@keyframes thk-frame-spin {
-    0%  { transform: rotate(0deg);   }
-    40% { transform: rotate(405deg); }
-    50% { transform: rotate(405deg); }
-    90% { transform: rotate(810deg); }
-   100% { transform: rotate(810deg); }
-}
-@keyframes thk-icon-spin {
-    0%  { transform: rotate(0deg);    }
-    40% { transform: rotate(-405deg); }
-    50% { transform: rotate(-405deg); }
-    90% { transform: rotate(-810deg); }
-   100% { transform: rotate(-810deg); }
-}
-.thk-outer { display:flex;align-items:flex-start;padding:4px 0 8px 8px; }
-.thk-frame { position:relative;width:40px;height:40px;flex-shrink:0;
-             display:flex;align-items:center;justify-content:center;
-             animation:thk-frame-spin 2.8s ease-in-out infinite; }
-.thk-icon  { font-size:16px;color:#d0d4da;
-             text-shadow:0 0 8px rgba(208,212,218,0.7);line-height:1;
-             animation:thk-icon-spin 2.8s ease-in-out infinite; }
-.thk-lc { position:absolute;width:13px;height:13px; }
-.thk-lc::before { content:'';position:absolute;width:100%;height:1.5px;
-                  background:#d0d4da;box-shadow:0 0 5px rgba(208,212,218,0.6); }
-.thk-lc::after  { content:'';position:absolute;width:1.5px;height:100%;
-                  background:#d0d4da;box-shadow:0 0 5px rgba(208,212,218,0.6); }
-.thk-tl { top:0;left:0;     } .thk-tl::before,.thk-tl::after { top:0;left:0;     }
-.thk-tr { top:0;right:0;    } .thk-tr::before,.thk-tr::after { top:0;right:0;    }
-.thk-bl { bottom:0;left:0;  } .thk-bl::before,.thk-bl::after { bottom:0;left:0;  }
-.thk-br { bottom:0;right:0; } .thk-br::before,.thk-br::after { bottom:0;right:0; }
-</style>
-<div class="thk-outer">
-  <div class="thk-frame">
-    <div class="thk-lc thk-tl"></div><div class="thk-lc thk-tr"></div>
-    <div class="thk-lc thk-bl"></div><div class="thk-lc thk-br"></div>
-    <div class="thk-icon">✦</div>
-  </div>
-</div>
-"""
+# Marker minimal — le JS injecte l'animation directement dans le slot avatar PIL
+THK_MARKER = '<span id="thk-marker" style="display:none"></span>'
 
 # ─── Interface chat ───────────────────────────────────────────────────────────
 for message in st.session_state.messages:
@@ -493,59 +450,144 @@ if user_input := st.chat_input("Posez votre question..."):
         st.write(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # Animation dans le slot avatar (hors st.chat_message pour contrôler la position)
-    thinking_slot = st.empty()
-    thinking_slot.markdown(THINKING_MESSAGE_HTML, unsafe_allow_html=True)
-    reply = process(user_input)
-    thinking_slot.empty()
-
     with st.chat_message("assistant", avatar=AVATAR_IMG):
+        # Le marker déclenche l'injection JS de l'animation dans ce slot avatar
+        thinking_slot = st.empty()
+        thinking_slot.markdown(THK_MARKER, unsafe_allow_html=True)
+        reply = process(user_input)
+        thinking_slot.empty()   # supprime le marker → JS retire l'animation et restaure PIL
         st.write(reply)
     st.session_state.messages.append({"role": "assistant", "content": reply})
 
-# ─── JS : force fond transparent + observateur persistant ─────────────────────
-# React reapplique parfois le fond via style inline après chaque re-render.
-# Le MutationObserver surveille stApp et corrige dès que ça arrive.
+# ─── JS : fond noir + injection animation dans le slot avatar ─────────────────
+# Le MutationObserver surveille le DOM entier de stApp pour deux responsabilités :
+#   1. Forcer le fond noir (React le réécrit parfois via style inline)
+#   2. Détecter l'apparition/disparition du #thk-marker pour injecter/retirer
+#      l'animation LED directement dans le slot avatar PIL du même stChatMessage
 components.html("""
 <script>
 (function () {
-    const doc = window.parent.document;
+    const doc  = window.parent.document;
+    const win  = window.parent;
 
-    if (window.parent._chatRoleObserver) {
-        window.parent._chatRoleObserver.disconnect();
-        delete window.parent._chatRoleObserver;
-    }
-    if (window.parent._bgObserver) {
-        window.parent._bgObserver.disconnect();
-    }
+    if (win._bgObserver) win._bgObserver.disconnect();
 
+    // ── 1. Fond noir ─────────────────────────────────────────────────────────
     const BG_SELS = [
-        'html', 'body',
-        '[data-testid="stApp"]',
-        '[data-testid="stAppViewContainer"]',
-        '[data-testid="stMain"]',
-        '[data-testid="stBottom"]',
-        '.block-container', '.main'
+        'html','body','[data-testid="stApp"]','[data-testid="stAppViewContainer"]',
+        '[data-testid="stMain"]','[data-testid="stBottom"]','.block-container','.main'
     ];
-
     function forceBg() {
-        BG_SELS.forEach(sel => {
-            const el = doc.querySelector(sel);
+        BG_SELS.forEach(s => {
+            const el = doc.querySelector(s);
             if (el) {
-                el.style.setProperty('background', '#000000', 'important');
-                el.style.setProperty('background-color', '#000000', 'important');
+                el.style.setProperty('background','#000000','important');
+                el.style.setProperty('background-color','#000000','important');
             }
         });
     }
 
-    forceBg();
+    // ── 2. Animation dans le slot avatar ────────────────────────────────────
+    function injectThkCss() {
+        if (doc.getElementById('thk-style')) return;
+        const s = doc.createElement('style');
+        s.id = 'thk-style';
+        s.textContent = `
+            @keyframes thk-fspin{
+                0%{transform:rotate(0deg)}40%{transform:rotate(405deg)}
+                50%{transform:rotate(405deg)}90%{transform:rotate(810deg)}
+                100%{transform:rotate(810deg)}
+            }
+            @keyframes thk-ispin{
+                0%{transform:rotate(0deg)}40%{transform:rotate(-405deg)}
+                50%{transform:rotate(-405deg)}90%{transform:rotate(-810deg)}
+                100%{transform:rotate(-810deg)}
+            }
+            #thk-anim{display:flex!important;align-items:center!important;justify-content:center!important;}
+            #thk-frame{
+                position:relative!important;width:100%!important;height:100%!important;
+                display:flex!important;align-items:center!important;justify-content:center!important;
+                animation:thk-fspin 2.8s ease-in-out infinite!important;
+            }
+            .thk-c{position:absolute!important;width:30%!important;height:30%!important;}
+            .thk-c::before{content:''!important;position:absolute!important;
+                width:100%!important;height:2px!important;
+                background:#d0d4da!important;box-shadow:0 0 5px rgba(208,212,218,.7)!important;}
+            .thk-c::after{content:''!important;position:absolute!important;
+                width:2px!important;height:100%!important;
+                background:#d0d4da!important;box-shadow:0 0 5px rgba(208,212,218,.7)!important;}
+            .thk-tl{top:0;left:0} .thk-tl::before,.thk-tl::after{top:0;left:0}
+            .thk-tr{top:0;right:0} .thk-tr::before,.thk-tr::after{top:0;right:0}
+            .thk-bl{bottom:0;left:0} .thk-bl::before,.thk-bl::after{bottom:0;left:0}
+            .thk-br{bottom:0;right:0} .thk-br::before,.thk-br::after{bottom:0;right:0}
+            #thk-star{
+                color:#d0d4da!important;font-size:15px!important;line-height:1!important;
+                text-shadow:0 0 8px rgba(208,212,218,.8)!important;
+                animation:thk-ispin 2.8s ease-in-out infinite!important;
+            }
+        `;
+        doc.head.appendChild(s);
+    }
 
-    // Surveille les changements d'attribut style sur stApp (cible React)
+    function applyThinkingAvatar() {
+        const marker = doc.getElementById('thk-marker');
+        const existing = doc.getElementById('thk-anim');
+
+        if (marker && !existing) {
+            // Remonter jusqu'au stChatMessage parent du marker
+            let node = marker.parentElement;
+            while (node && node !== doc.body) {
+                if (node.getAttribute && node.getAttribute('data-testid') === 'stChatMessage') break;
+                node = node.parentElement;
+            }
+            if (!node || node === doc.body) return;
+
+            const img = node.querySelector('img');
+            if (!img) return;
+
+            injectThkCss();
+
+            const sz = img.offsetWidth || 36;
+            const anim = doc.createElement('div');
+            anim.id = 'thk-anim';
+            anim.style.cssText = 'width:'+sz+'px;height:'+sz+'px;';
+            anim.innerHTML =
+                '<div id="thk-frame">' +
+                  '<div class="thk-c thk-tl"></div><div class="thk-c thk-tr"></div>' +
+                  '<div class="thk-c thk-bl"></div><div class="thk-c thk-br"></div>' +
+                  '<span id="thk-star">✦</span>' +
+                '</div>';
+
+            img.style.setProperty('display','none','important');
+            win._thkImg = img;
+            img.parentElement.appendChild(anim);
+
+        } else if (!marker && existing) {
+            existing.remove();
+            if (win._thkImg) {
+                win._thkImg.style.removeProperty('display');
+                win._thkImg = null;
+            }
+        }
+    }
+
+    // ── Bootstrap + observer ─────────────────────────────────────────────────
+    forceBg();
+    applyThinkingAvatar();
+
     const appEl = doc.querySelector('[data-testid="stApp"]');
     if (appEl) {
-        const obs = new MutationObserver(forceBg);
-        obs.observe(appEl, { attributes: true, attributeFilter: ['style'] });
-        window.parent._bgObserver = obs;
+        let raf = null;
+        const obs = new MutationObserver(() => {
+            forceBg();
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(applyThinkingAvatar);
+        });
+        obs.observe(appEl, {
+            attributes: true, attributeFilter: ['style'],
+            childList: true,  subtree: true
+        });
+        win._bgObserver = obs;
     }
 })();
 </script>
