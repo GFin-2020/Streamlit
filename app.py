@@ -4,8 +4,40 @@ import google.generativeai as genai
 import os
 import json
 import re
+import math
 from urllib.parse import quote
+from PIL import Image, ImageDraw
 import streamlit.components.v1 as components
+
+# ─── Avatar : LED frame + étoile 4 branches (design issu du React) ────────────
+def _make_avatar(size: int = 80) -> Image.Image:
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    c = (208, 212, 218, 255)   # #d0d4da
+    lw, cs = 3, 18              # épaisseur trait, taille coin
+
+    # Coins LED (4 brackets)
+    for x0, x1, y0, y1 in [
+        (0, cs, 0, 0), (0, 0, 0, cs),                        # haut-gauche
+        (size - cs, size, 0, 0), (size, size, 0, cs),         # haut-droite
+        (0, 0, size - cs, size), (0, cs, size, size),         # bas-gauche
+        (size - cs, size, size, size), (size, size, size - cs, size),  # bas-droite
+    ]:
+        draw.line([(x0, y0), (x1, y1)], fill=c, width=lw)
+
+    # Étoile Gemini 4 branches (bras longs, centre étroit)
+    cx = cy = size // 2
+    outer, inner = round(size * 0.30), round(size * 0.04)
+    pts = []
+    for i in range(8):
+        angle = math.pi / 4 * i - math.pi / 2
+        r = outer if i % 2 == 0 else inner
+        pts.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+    draw.polygon(pts, fill=c)
+
+    return img
+
+AVATAR_IMG = _make_avatar()
 
 # ─── Configuration page ───────────────────────────────────────────────────────
 st.set_page_config(page_title="P&G Chatbot", layout="centered")
@@ -435,7 +467,7 @@ for message in st.session_state.messages:
             st.markdown('<span class="msg-user"></span>', unsafe_allow_html=True)
             st.write(message["content"])
     else:
-        with st.chat_message("assistant", avatar="✦"):
+        with st.chat_message("assistant", avatar=AVATAR_IMG):
             st.write(message["content"])
 
 if user_input := st.chat_input("Posez votre question..."):
@@ -444,7 +476,7 @@ if user_input := st.chat_input("Posez votre question..."):
         st.write(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    with st.chat_message("assistant", avatar="✦"):
+    with st.chat_message("assistant", avatar=AVATAR_IMG):
         thinking_slot = st.empty()
         thinking_slot.markdown(THINKING_HTML, unsafe_allow_html=True)
         reply = process(user_input)
@@ -452,7 +484,9 @@ if user_input := st.chat_input("Posez votre question..."):
         st.write(reply)
     st.session_state.messages.append({"role": "assistant", "content": reply})
 
-# ─── JS : supprime l'ancien observateur, force les fonds transparents ─────────
+# ─── JS : force fond transparent + observateur persistant ─────────────────────
+# React reapplique parfois le fond via style inline après chaque re-render.
+# Le MutationObserver surveille stApp et corrige dès que ça arrive.
 components.html("""
 <script>
 (function () {
@@ -462,24 +496,38 @@ components.html("""
         window.parent._chatRoleObserver.disconnect();
         delete window.parent._chatRoleObserver;
     }
+    if (window.parent._bgObserver) {
+        window.parent._bgObserver.disconnect();
+    }
 
-    // Force la transparence sur les éléments qui reçoivent parfois un fond blanc inline
-    [
+    const BG_SELS = [
         'html', 'body',
         '[data-testid="stApp"]',
         '[data-testid="stAppViewContainer"]',
         '[data-testid="stMain"]',
         '[data-testid="stBottom"]',
-        '.block-container',
-        '.main',
-        '.appview-container'
-    ].forEach(sel => {
-        const el = doc.querySelector(sel);
-        if (el) {
-            el.style.setProperty('background', 'transparent', 'important');
-            el.style.setProperty('background-color', 'transparent', 'important');
-        }
-    });
+        '.block-container', '.main'
+    ];
+
+    function forceBg() {
+        BG_SELS.forEach(sel => {
+            const el = doc.querySelector(sel);
+            if (el) {
+                el.style.setProperty('background', 'transparent', 'important');
+                el.style.setProperty('background-color', 'transparent', 'important');
+            }
+        });
+    }
+
+    forceBg();
+
+    // Surveille les changements d'attribut style sur stApp (cible React)
+    const appEl = doc.querySelector('[data-testid="stApp"]');
+    if (appEl) {
+        const obs = new MutationObserver(forceBg);
+        obs.observe(appEl, { attributes: true, attributeFilter: ['style'] });
+        window.parent._bgObserver = obs;
+    }
 })();
 </script>
 """, height=0, scrolling=False)
