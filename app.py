@@ -158,23 +158,23 @@ st.markdown("""
 
     html::before {
         top: 0; left: 0;
-        border-top: 2px solid #434343;
-        border-left: 2px solid #434343;
+        border-top: 3px solid #434343;
+        border-left: 3px solid #434343;
     }
     html::after {
         top: 0; right: 18px;
-        border-top: 2px solid #434343;
-        border-right: 2px solid #434343;
+        border-top: 3px solid #434343;
+        border-right: 3px solid #434343;
     }
     body::before {
         bottom: 0; left: 0;
-        border-bottom: 2px solid #434343;
-        border-left: 2px solid #434343;
+        border-bottom: 3px solid #434343;
+        border-left: 3px solid #434343;
     }
     body::after {
         bottom: 0; right: 18px;
-        border-bottom: 2px solid #434343;
-        border-right: 2px solid #434343;
+        border-bottom: 3px solid #434343;
+        border-right: 3px solid #434343;
     }
 
     /* État illuminé : hover sur la fenêtre OU focus sur le champ */
