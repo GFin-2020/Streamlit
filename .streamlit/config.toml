@@ -1,3 +1,6 @@
 [server]
 enableCORS = false
 enableXsrfProtection = false
+
+[theme]
+primaryColor = "#d0d4da"

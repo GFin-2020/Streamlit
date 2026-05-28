@@ -14,6 +14,13 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
+    /* ── Variables CSS ───────────────────────────────────────────────── */
+    :root {
+        --primary-color: rgba(208, 212, 218, 0.35) !important;
+        --background-color: transparent !important;
+        --secondary-background-color: transparent !important;
+    }
+
     /* ── Typographie ─────────────────────────────────────────────────── */
     html, body, * {
         font-family: 'Inter', sans-serif !important;
@@ -46,17 +53,16 @@ st.markdown("""
     }
 
     /* ── Backgrounds transparents ────────────────────────────────────── */
-    html, body,
+    html, body, #root,
     [data-testid="stApp"],
     [data-testid="stAppViewContainer"],
     [data-testid="stMain"],
     [data-testid="stBottom"],
     [data-testid="stVerticalBlock"],
     [data-testid="stVerticalBlockBorderWrapper"],
+    [data-testid^="stChat"],
     .main, .block-container,
-    [data-testid="stChatMessage"],
-    [data-testid="stChatInputContainer"],
-    [data-testid="stChatInput"] textarea {
+    .appview-container {
         background: transparent !important;
         background-color: transparent !important;
     }
@@ -75,13 +81,10 @@ st.markdown("""
 
     [data-testid="stChatInput"] textarea {
         caret-color: #d0d4da !important;
+        background: transparent !important;
     }
 
     /* ── Champ saisie : pas de bordure rouge ─────────────────────────── */
-    :root {
-        --primary-color: rgba(208, 212, 218, 0.35) !important;
-    }
-
     [data-testid="stChatInputContainer"] > div {
         border-color: rgba(208, 212, 218, 0.18) !important;
         box-shadow: none !important;
@@ -93,54 +96,83 @@ st.markdown("""
         box-shadow: none !important;
     }
 
+    [data-testid="stChatInputContainer"] textarea:focus,
+    [data-testid="stChatInputContainer"] textarea:active,
+    [data-baseweb="textarea"]:focus-within {
+        border-color: rgba(208, 212, 218, 0.4) !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    /* ── Bouton envoi : pas de rouge ─────────────────────────────────── */
+    [data-testid="stChatInputContainer"] button,
+    [data-testid="stChatInputContainer"] button:hover,
+    [data-testid="stChatInputContainer"] button:focus,
+    [data-testid="stChatInputContainer"] button:active,
+    [data-testid="stChatInputContainer"] button:not([disabled]) {
+        background: transparent !important;
+        background-color: transparent !important;
+        border-color: rgba(208, 212, 218, 0.35) !important;
+        box-shadow: none !important;
+        outline: none !important;
+        color: #d0d4da !important;
+    }
+
+    [data-testid="stChatInputContainer"] button svg,
+    [data-testid="stChatInputContainer"] button svg path {
+        fill: #d0d4da !important;
+    }
+
     *:focus, *:focus-visible {
         outline: none !important;
     }
 
-    /* ── Messages user à droite, avatar masqué ───────────────────────── */
-    [data-chat-role="user"] {
+    /* ── Messages user à droite via :has (sans JS, sans race condition) ── */
+    [data-testid="stChatMessage"]:has(.msg-user) {
         flex-direction: row-reverse !important;
     }
 
-    /* Masque le premier enfant du message user (conteneur avatar) */
-    [data-chat-role="user"] > div:first-child {
+    [data-testid="stChatMessage"]:has(.msg-user) > div:first-child {
         display: none !important;
     }
 
-    /* Aligne le texte à droite */
-    [data-chat-role="user"] [data-testid="stMarkdownContainer"],
-    [data-chat-role="user"] p {
+    [data-testid="stChatMessage"]:has(.msg-user) [data-testid="stMarkdownContainer"],
+    [data-testid="stChatMessage"]:has(.msg-user) p {
         text-align: right !important;
     }
 
-    /* ── Coins LED (pseudo-éléments CSS pur) ─────────────────────────── */
+    .msg-user {
+        display: none !important;
+    }
+
+    /* ── Coins LED — positionnés aux bords réels du composant ────────── */
     html::before, html::after, body::before, body::after {
         content: '';
         position: fixed;
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         z-index: 99999;
         pointer-events: none;
         transition: border-color 0.4s ease, filter 0.4s ease;
     }
 
     html::before {
-        top: 12px; left: 12px;
+        top: 4px; left: 4px;
         border-top: 1.5px solid rgba(208, 212, 218, 0.2);
         border-left: 1.5px solid rgba(208, 212, 218, 0.2);
     }
     html::after {
-        top: 12px; right: 12px;
+        top: 4px; right: 4px;
         border-top: 1.5px solid rgba(208, 212, 218, 0.2);
         border-right: 1.5px solid rgba(208, 212, 218, 0.2);
     }
     body::before {
-        bottom: 12px; left: 12px;
+        bottom: 4px; left: 4px;
         border-bottom: 1.5px solid rgba(208, 212, 218, 0.2);
         border-left: 1.5px solid rgba(208, 212, 218, 0.2);
     }
     body::after {
-        bottom: 12px; right: 12px;
+        bottom: 4px; right: 4px;
         border-bottom: 1.5px solid rgba(208, 212, 218, 0.2);
         border-right: 1.5px solid rgba(208, 212, 218, 0.2);
     }
@@ -354,15 +386,21 @@ def process(question):
 
 # ─── Interface chat ───────────────────────────────────────────────────────────
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+    if message["role"] == "user":
+        with st.chat_message("user"):
+            st.markdown('<span class="msg-user"></span>', unsafe_allow_html=True)
+            st.write(message["content"])
+    else:
+        with st.chat_message("assistant", avatar="✨"):
+            st.write(message["content"])
 
 if user_input := st.chat_input("Posez votre question..."):
     with st.chat_message("user"):
+        st.markdown('<span class="msg-user"></span>', unsafe_allow_html=True)
         st.write(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="✨"):
         # ── Slot animation "IA réfléchit" ──────────────────────────────
         # Remplace le st.spinner ci-dessous par ton animation JS :
         # with st.empty():
@@ -373,31 +411,34 @@ if user_input := st.chat_input("Posez votre question..."):
         st.write(reply)
     st.session_state.messages.append({"role": "assistant", "content": reply})
 
-# ─── JS : tagage des rôles user/assistant pour le CSS ────────────────────────
-# Observe les mutations du DOM parent et ajoute data-chat-role sur chaque message.
+# ─── JS : supprime l'ancien observateur, force les fonds transparents ─────────
 components.html("""
 <script>
 (function () {
     const doc = window.parent.document;
 
-    // Déconnecte l'observateur précédent si la page a re-rendu
     if (window.parent._chatRoleObserver) {
         window.parent._chatRoleObserver.disconnect();
+        delete window.parent._chatRoleObserver;
     }
 
-    function tagMessages() {
-        const msgs = doc.querySelectorAll('[data-testid="stChatMessage"]');
-        msgs.forEach((msg, i) => {
-            // index pair = assistant (greeting + réponses), impair = user
-            msg.setAttribute('data-chat-role', i % 2 === 0 ? 'assistant' : 'user');
-        });
-    }
-
-    tagMessages();
-
-    const observer = new MutationObserver(tagMessages);
-    observer.observe(doc.body, { childList: true, subtree: true });
-    window.parent._chatRoleObserver = observer;
+    // Force la transparence sur les éléments qui reçoivent parfois un fond blanc inline
+    [
+        'html', 'body',
+        '[data-testid="stApp"]',
+        '[data-testid="stAppViewContainer"]',
+        '[data-testid="stMain"]',
+        '[data-testid="stBottom"]',
+        '.block-container',
+        '.main',
+        '.appview-container'
+    ].forEach(sel => {
+        const el = doc.querySelector(sel);
+        if (el) {
+            el.style.setProperty('background', 'transparent', 'important');
+            el.style.setProperty('background-color', 'transparent', 'important');
+        }
+    });
 })();
 </script>
 """, height=0, scrolling=False)
